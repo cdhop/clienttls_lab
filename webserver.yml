@@ -1,0 +1,65 @@
+---
+- name: Setup Nginx Server
+  hosts: all
+  become: true
+  become_method: sudo
+
+  vars:
+    ansible_python_interpreter: '/usr/bin/env python3'
+
+  tasks:
+
+    - name: Install Packages
+      apt: update_cache=yes name={{ item }} state=present
+      with_items:
+        - nginx
+
+    - name: Copy Nginx virtualhost file
+      copy: 
+        src: files/default_nginx
+        dest: /etc/nginx/sites-available/default
+      notify:
+        - restart nginx
+
+    - name: Copy server.example.crt file
+      copy: 
+        src: files/server.example.crt
+        dest: /etc/ssl/certs/server.example.crt
+      notify:
+        - restart nginx
+
+    - name: Copy server.example.key file
+      copy: 
+        src: files/server.example.key
+        dest: /etc/ssl/private/server.example.key
+      notify:
+        - restart nginx
+
+    - name: Copy ca_cert.pem file
+      copy: 
+        src: files/ca_cert.pem
+        dest: /etc/ssl/certs/ca_cert.pem
+      notify:
+        - restart nginx
+        - reload certificates
+
+    - name: add server.example to /etc/hosts file
+      lineinfile:
+        path: /etc/hosts
+        regexp: '^192\.168\.2\.10'
+        line: '192.168.2.10 server.example'
+
+    - name: add client.example to /etc/hosts file
+      lineinfile:
+        path: /etc/hosts
+        regexp: '^192\.168\.2\.5'
+        line: '192.168.2.5 client.example'
+
+  handlers:
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted
+
+    - name: reload certificates
+      command: /usr/bin/c_rehash

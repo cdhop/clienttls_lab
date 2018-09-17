@@ -1,0 +1,49 @@
+---
+- name: Setup client
+  hosts: all
+  become: true
+  become_method: sudo
+
+  vars:
+    ansible_python_interpreter: '/usr/bin/env python3'
+
+  tasks:
+
+    - name: Install Packages
+      apt: update_cache=yes name={{ item }} state=present
+      with_items:
+        - nmap
+
+    - name: Copy ca_cert.pem file
+      copy: 
+        src: files/ca_cert.pem
+        dest: /etc/ssl/certs/ca_cert.pem
+      notify:
+        - reload certificates        
+
+    - name: add server.example to /etc/hosts file
+      lineinfile:
+        path: /etc/hosts
+        regexp: '^192\.168\.2\.10'
+        line: '192.168.2.10 server.example'
+
+    - name: add client.example to /etc/hosts file
+      lineinfile:
+        path: /etc/hosts
+        regexp: '^192\.168\.2\.5'
+        line: '192.168.2.5 client.example'
+
+    - name: Copy client.example.crt file
+      copy: 
+        src: files/client.example.crt
+        dest: /etc/ssl/certs/client.example.crt
+
+    - name: Copy client.example.key file
+      copy: 
+        src: files/client.example.key
+        dest: /etc/ssl/private/client.example.key
+
+
+  handlers:
+    - name: reload certificates
+      command: /usr/bin/c_rehash

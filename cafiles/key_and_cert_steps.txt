@@ -1,0 +1,14 @@
+# Generate ca_key and ca_cert
+openssl req -newkey rsa:2048 -nodes -keyout ca_key.pem -x509 -days 3650 -out ca_cert.pem
+
+# Generate server.example.key and server.example.csr
+openssl req -new -newkey rsa:4096 -nodes -keyout server.example.key -out server.example.csr 
+
+# Generate client.example.key and client.example.csr
+openssl req -new -newkey rsa:4096 -nodes -keyout client.example.key -out client.example.csr
+
+# Generate server.example.crt 
+openssl x509 -req -days 365 -in server.example.csr -CA ca_cert.pem -CAkey ca_key.pem -CAcreateserial -out server.example.crt
+
+# Generate client.example.crt 
+openssl x509 -req -days 365 -in client.example.csr -CA ca_cert.pem -CAkey ca_key.pem -CAcreateserial -out client.example.crt
